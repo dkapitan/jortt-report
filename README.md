@@ -87,7 +87,10 @@ The pipeline will:
 After running the pipeline, you can query the data using DuckDB:
 
 ```bash
-# Open the DuckDB CLI
+# Open a marimo notebook
+uv run marimo edit notebook.py
+
+# Or open the DuckDB CLI
 duckdb jortt.duckdb
 
 # Or use Python
@@ -98,19 +101,25 @@ python
 >>> conn.execute("SELECT * FROM raw.project_line_items LIMIT 5").fetchdf()
 ```
 
-### Project Structure
+### just
+
+Alternatively, install [just](https://just.systems/man/en/introduction.html) and use the `just` command runner.
+
+
+### Project structure
 
 ```
 jortt-duck/
-├── src/
-│   └── jortt_duck/
-│       ├── __init__.py
-│       ├── __main__.py       # Main entry point
-│       ├── auth.py           # OAuth authentication helper
-│       └── pipeline.py       # DLT pipeline with REST API config
-├── .env                      # Environment variables
+├── jortt_duck/
+│   ├── __init__.py
+│   ├── __main__.py       # Main entry point
+│   ├── auth.py           # OAuth authentication helper
+│   └── pipeline.py       # DLT pipeline with REST API config
+├── .env                  # Environment variables
 ├── .gitignore
-├── pyproject.toml            # Project configuration
+├── justfile              # just command runner
+├── notebook.py           # example marimo notebook
+├── pyproject.toml        # Project configuration
 └── README.md
 ```
 
@@ -183,19 +192,14 @@ To add more resources from the Jortt API, simply add them to the `resources` lis
 
 That's it! No custom Python code needed. The dlt REST API source handles everything automatically.
 
-## Dependencies
+## Resources
 
-- **dlt[duckdb]**: Data loading framework with DuckDB support
-- **python-dotenv**: Environment variable management
-- **requests**: HTTP client for API calls
+- [Jortt API documentation](https://developer.jortt.nl/)
+- [DLT documentation](https://dlthub.com/docs)
+- [DLT REST API source documentation](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic)
+- [DuckDB documentation](https://duckdb.org/docs/)
+- [marimo](https://docs.marimo.io)
 
 ## License
 
-MIT
-
-## Resources
-
-- [Jortt API Documentation](https://developer.jortt.nl/)
-- [DLT Documentation](https://dlthub.com/docs)
-- [DLT REST API Source Documentation](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic)
-- [DuckDB Documentation](https://duckdb.org/docs/)
+GNU General Public License v3.0
