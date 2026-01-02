@@ -1,5 +1,7 @@
 # Project Summary: Jortt to DuckDB Pipeline
 
+This project was vibe-coded with Claude Code. It took about half an hour and I had to correct to steer it in the right direction about five times (e.g. to use dlt's declarative API). But other than that is was quite painless. Total Claude token cost around $3. 
+
 ## What Was Built
 
 A complete Python data pipeline that:
