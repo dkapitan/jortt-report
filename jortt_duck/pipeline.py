@@ -42,6 +42,11 @@ def get_jortt_config(access_token: str) -> dict:
                     "path": "customers",
                     "data_selector": "data",
                 },
+                "columns": {
+                    "date_of_birth": {"data_type": "date"},
+                    "payment_term": {"data_type": "bigint"},
+                    "default_discount_percentage": {"data_type": "bigint"},
+                },
             },
             {
                 "name": "projects",
@@ -51,6 +56,14 @@ def get_jortt_config(access_token: str) -> dict:
                         "per_page": 100,
                     },
                     "data_selector": "data",
+                },
+                "columns": {
+                    "default_hourly_rate__value": {"data_type": "double"},
+                    "minutes_this_month": {"data_type": "bigint"},
+                    "total_minutes": {"data_type": "bigint"},
+                    "total_value__value": {"data_type": "double"},
+                    "customer_record__payment_term": {"data_type": "bigint"},
+                    "customer_record__default_discount_percentage": {"data_type": "bigint"},
                 },
             },
             {
@@ -67,6 +80,12 @@ def get_jortt_config(access_token: str) -> dict:
                         },
                     },
                     "data_selector": "data",
+                },
+                "columns": {
+                    "date": {"data_type": "date"},
+                    "quantity": {"data_type": "double"},
+                    "amount__value": {"data_type": "double"},
+                    "total_amount__value": {"data_type": "double"},
                 },
             },
         ],
@@ -128,6 +147,7 @@ def run_pipeline(
             pipeline_name="jortt_to_duckdb",
             destination=dlt.destinations.duckdb(database_path),
             dataset_name="raw",  # Schema name within the database
+            progress=dlt.progress.tqdm(colour="yellow")
         )
 
         # Run the pipeline
