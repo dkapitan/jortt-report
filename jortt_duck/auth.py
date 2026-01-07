@@ -30,7 +30,7 @@ class JorttAuth:
         self.client_id = client_id or os.getenv("JORTT_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("JORTT_CLIENT_SECRET")
         self.scopes = scopes or os.getenv(
-            "JORTT_SCOPES", "invoices:read invoices:write"
+            "JORTT_SCOPES", "customers:read invoices:read invoices:write"
         )
 
         if not self.client_id or not self.client_secret:

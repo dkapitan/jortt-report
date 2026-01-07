@@ -2,6 +2,11 @@
 
 import dlt
 from dlt.sources.rest_api import rest_api_source
+from dlt.destinations.exceptions import DestinationConnectionError
+from dlt.pipeline.exceptions import PipelineStepFailed
+from pathlib import Path
+from datetime import datetime
+import duckdb
 
 
 def get_jortt_config(access_token: str) -> dict:
@@ -30,6 +35,14 @@ def get_jortt_config(access_token: str) -> dict:
             "primary_key": "aggregate_id",
         },
         "resources": [
+            {
+                "name": "customers",
+                "primary_key": "id",
+                "endpoint": {
+                    "path": "customers",
+                    "data_selector": "data",
+                },
+            },
             {
                 "name": "projects",
                 "endpoint": {
@@ -60,6 +73,39 @@ def get_jortt_config(access_token: str) -> dict:
     }
 
 
+def backup_database(database_path: str) -> str:
+    """Backup the database file to the backup folder with a timestamp prefix.
+
+    Args:
+        database_path: Path to the database file to backup
+
+    Returns:
+        Path to the backup file
+    """
+    db_path = Path(database_path)
+
+    if not db_path.exists():
+        return None
+
+    # Get project root (parent of the database file)
+    project_root = db_path.parent
+    backup_dir = project_root / "backup"
+
+    # Create backup directory if it doesn't exist
+    backup_dir.mkdir(exist_ok=True)
+
+    # Create backup filename with timestamp prefix
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"{timestamp}_{db_path.name}"
+    backup_path = backup_dir / backup_filename
+
+    # Move the file to backup using Path.rename()
+    db_path.rename(backup_path)
+    print(f"✓ Backed up database to: {backup_path}")
+
+    return str(backup_path)
+
+
 def run_pipeline(
     jortt_access_token: str = None,
     database_path: str = "jortt.duckdb",
@@ -76,20 +122,55 @@ def run_pipeline(
     # Create the REST API source
     source = rest_api_source(config)
 
-    # Create the pipeline with local DuckDB destination
-    pipeline = dlt.pipeline(
-        pipeline_name="jortt_to_duckdb",
-        destination=dlt.destinations.duckdb(database_path),
-        dataset_name="raw",  # Schema name within the database
-    )
+    try:
+        # Create the pipeline with local DuckDB destination
+        pipeline = dlt.pipeline(
+            pipeline_name="jortt_to_duckdb",
+            destination=dlt.destinations.duckdb(database_path),
+            dataset_name="raw",  # Schema name within the database
+        )
 
-    # Run the pipeline
-    load_info = pipeline.run(source)
+        # Run the pipeline
+        load_info = pipeline.run(source)
 
-    # Print the load info
-    print("\n✓ Pipeline completed successfully!")
-    print(f"Database: {database_path}")
-    print("Schema: raw")
-    print(f"Loaded {len(load_info.loads_ids)} load(s)")
-    print("\nLoad details:")
-    print(load_info)
+        # Print the load info
+        print("\n✓ Pipeline completed successfully!")
+        print(f"Database: {database_path}")
+        print("Schema: raw")
+        print(f"Loaded {len(load_info.loads_ids)} load(s)")
+        print("\nLoad details:")
+        print(load_info)
+
+    except (duckdb.IOException, DestinationConnectionError, PipelineStepFailed) as e:
+        # Check if the error is related to IO/lock issues
+        error_msg = str(e)
+        if "IO Error" in error_msg or "Could not set lock" in error_msg:
+            print(f"\n⚠ DuckDB IO Error detected")
+            print("Attempting to recover by backing up and recreating the database...")
+
+            # Backup the corrupted/locked database
+            backup_path = backup_database(database_path)
+
+            if backup_path:
+                print(f"Creating new database at: {database_path}")
+
+                # Retry the pipeline with a fresh database
+                pipeline = dlt.pipeline(
+                    pipeline_name="jortt_to_duckdb",
+                    destination=dlt.destinations.duckdb(database_path),
+                    dataset_name="raw",
+                )
+
+                load_info = pipeline.run(source)
+
+                print("\n✓ Pipeline completed successfully after recovery!")
+                print(f"Database: {database_path}")
+                print("Schema: raw")
+                print(f"Loaded {len(load_info.loads_ids)} load(s)")
+                print("\nLoad details:")
+                print(load_info)
+            else:
+                raise Exception("Failed to backup database for recovery")
+        else:
+            # Re-raise if it's not an IO/lock error
+            raise

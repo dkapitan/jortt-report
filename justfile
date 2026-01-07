@@ -7,7 +7,7 @@ load:
 
 # analyze data in marimo notebook
 report:
-    uv run marimo edit notepbook.py
+    uv run marimo edit notebook.py
 
 # analyze using DuckDB CLI
 duck:
