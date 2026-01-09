@@ -1,5 +1,4 @@
-default:
-    just --list
+default: load report
 
 # ingest data from jortt API (full load)
 load:
@@ -7,7 +6,7 @@ load:
 
 # analyze data in marimo notebook
 report:
-    uv run marimo edit notebook.py
+    uv run marimo edit ./jortt_duck/app.py
 
 # analyze using DuckDB CLI
 duck:

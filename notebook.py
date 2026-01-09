@@ -34,19 +34,19 @@ def _(mo):
 def _(mo):
     _df = mo.sql(
         f"""
-        select *
-        from jortt.raw.project_line_items
-        """
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    _df = mo.sql(
-        f"""
-        select *
-        from jortt.raw.projects
+        select
+            p.customer_record__customer_name as customer,
+            p.name as project_name,
+            i.date as time_registration_date,
+            i.quantity as time_registration_quantity,
+            i.description as time_registration_description,
+            i.created_at,
+            i.updated_at
+        from jortt.raw.project_line_items as i
+        left join jortt.raw.projects as p on p.aggregate_id = i.project_id
+        order by
+            time_registration_date,
+            customer
         """
     )
     return
