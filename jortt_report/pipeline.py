@@ -63,7 +63,9 @@ def get_jortt_config(access_token: str) -> dict:
                     "total_minutes": {"data_type": "bigint"},
                     "total_value__value": {"data_type": "double"},
                     "customer_record__payment_term": {"data_type": "bigint"},
-                    "customer_record__default_discount_percentage": {"data_type": "bigint"},
+                    "customer_record__default_discount_percentage": {
+                        "data_type": "bigint"
+                    },
                 },
             },
             {
@@ -147,26 +149,30 @@ def run_pipeline(
             pipeline_name="jortt_to_duckdb",
             destination=dlt.destinations.duckdb(database_path),
             dataset_name="raw",  # Schema name within the database
-            progress=dlt.progress.tqdm(colour="yellow")
+            progress=dlt.progress.tqdm(colour="yellow"),
         )
 
         # Run the pipeline
         load_info = pipeline.run(source)
 
         # Print the load info
-        print("\n✓ Pipeline completed successfully!")
-        print(f"Database: {database_path}")
-        print("Schema: raw")
-        print(f"Loaded {len(load_info.loads_ids)} load(s)")
-        print("\nLoad details:")
+        print(
+            "\n✓ Pipeline completed successfully!\n"
+            f"Database: {database_path}\n"
+            "Schema: raw\n"
+            f"Loaded {len(load_info.loads_ids)} load(s)\n"
+            "\nLoad details:"
+        )
         print(load_info)
 
     except (duckdb.IOException, DestinationConnectionError, PipelineStepFailed) as e:
         # Check if the error is related to IO/lock issues
         error_msg = str(e)
         if "IO Error" in error_msg or "Could not set lock" in error_msg:
-            print(f"\n⚠ DuckDB IO Error detected")
-            print("Attempting to recover by backing up and recreating the database...")
+            print(
+                "\n⚠ DuckDB IO Error detected\n"
+                "Attempting to recover by backing up and recreating the database..."
+            )
 
             # Backup the corrupted/locked database
             backup_path = backup_database(database_path)
@@ -183,11 +189,13 @@ def run_pipeline(
 
                 load_info = pipeline.run(source)
 
-                print("\n✓ Pipeline completed successfully after recovery!")
-                print(f"Database: {database_path}")
-                print("Schema: raw")
-                print(f"Loaded {len(load_info.loads_ids)} load(s)")
-                print("\nLoad details:")
+                print(
+                    "\n✓ Pipeline completed successfully after recovery!\n"
+                    f"Database: {database_path}\n"
+                    "Schema: raw\n"
+                    f"Loaded {len(load_info.loads_ids)} load(s)\n"
+                    "\nLoad details:"
+                )
                 print(load_info)
             else:
                 raise Exception("Failed to backup database for recovery")

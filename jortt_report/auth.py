@@ -80,36 +80,41 @@ if __name__ == "__main__":
     """Run this script to fetch and display an access token."""
     try:
         auth = JorttAuth()
-        print("Requesting access token from Jortt...")
-        print(f"Client ID: {auth.client_id}")
-        print(f"Scopes: {auth.scopes}")
-        print()
+        print(
+            "Requesting access token from Jortt...\n"
+            f"Client ID: {auth.client_id}\n"
+            f"Scopes: {auth.scopes}\n"
+        )
 
         token_data = auth.get_access_token()
 
-        print("✓ Successfully obtained access token!")
-        print()
-        print("Token details:")
-        print(f"  Token Type: {token_data.get('token_type')}")
-        print(f"  Expires In: {token_data.get('expires_in')} seconds")
-        print(f"  Scopes: {token_data.get('scope')}")
-        print()
-        print("Access Token:")
-        print(token_data["access_token"])
-        print()
-        print("Add this to your .env file:")
-        print(f"JORTT_ACCESS_TOKEN={token_data['access_token']}")
+        print(
+            "✓ Successfully obtained access token!\n"
+            "\n"
+            "Token details:\n"
+            f"  Token Type: {token_data.get('token_type')}\n"
+            f"  Expires In: {token_data.get('expires_in')} seconds\n"
+            f"  Scopes: {token_data.get('scope')}\n"
+            "\n"
+            "Access Token:\n"
+            f"{token_data['access_token']}\n"
+            "\n"
+            "Add this to your .env file:\n"
+            f"JORTT_ACCESS_TOKEN={token_data['access_token']}"
+        )
 
     except ValueError as e:
-        print(f"✗ Configuration error: {e}")
-        print()
         print(
+            f"✗ Configuration error: {e}\n"
+            "\n"
             "Make sure you have set JORTT_CLIENT_ID and JORTT_CLIENT_SECRET in your .env file"
         )
     except requests.HTTPError as e:
-        print(f"✗ Authentication failed: {e}")
-        print(f"Response: {e.response.text}")
-        print()
-        print("Please check your credentials and try again")
+        print(
+            f"✗ Authentication failed: {e}\n"
+            f"Response: {e.response.text}\n"
+            "\n"
+            "Please check your credentials and try again"
+        )
     except Exception as e:
         print(f"✗ Unexpected error: {e}")

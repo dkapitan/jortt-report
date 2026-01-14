@@ -9,6 +9,13 @@ A Python project that ingests data from the [Jortt API](https://developer.jortt.
 - **Multiple Resources**: Ingests projects and project line items from Jortt API
 - **Local DuckDB Storage**: Stores data in a local DuckDB database file
 - **Automatic Pagination**: Built-in pagination handling by dlt
+- **Semantic Layer**: Built-in semantic model with pre-aggregated tables for reporting
+- **Textual TUI**: Rich terminal-based user interface with:
+  - Async pipeline execution (non-blocking)
+  - Keyboard navigation for weeks and months
+  - Toggle between hours and euros metrics
+  - Custom blue color theme
+  - Instant notifications
 - **Type-Safe**: Built with modern Python practices
 
 ## Prerequisites
@@ -22,7 +29,7 @@ A Python project that ingests data from the [Jortt API](https://developer.jortt.
 ### 1. Clone or navigate to the project directory
 
 ```bash
-cd jortt-duck
+cd jortt-report
 ```
 
 ### 2. Install dependencies
@@ -65,7 +72,7 @@ DATABASE_PATH=jortt.duckdb
 If you want to manually fetch an access token to test your credentials:
 
 ```bash
-uv run python -m jortt_duck.auth
+uv run python -m jortt_report.auth
 ```
 
 This will display your access token and token details. However, the pipeline will automatically fetch tokens when needed.
@@ -73,7 +80,7 @@ This will display your access token and token details. However, the pipeline wil
 ### Run the pipeline
 
 ```bash
-uv run python -m jortt_duck
+uv run python -m jortt_report
 ```
 
 The pipeline will:
@@ -82,23 +89,47 @@ The pipeline will:
 3. Load the data into a local DuckDB database file (`jortt.duckdb` by default)
 4. Store tables in the `raw` schema
 
+### View Reports
+
+After running the pipeline, you can view your timesheet data using the Textual TUI:
+
+#### Textual TUI (Terminal-based)
+
+**Local development:**
+```bash
+uv run jortt-report
+```
+
+**Install globally with uvx (recommended):**
+```bash
+uvx jortt-report
+```
+
+This launches a rich terminal UI with:
+- **Async pipeline execution**: Press 'r' to refresh data without blocking the UI
+- **Weekly and monthly reports**: Side-by-side timesheet views
+- **Keyboard navigation**:
+  - Arrow keys (←/→) to navigate weeks
+  - Shift+Arrow keys to navigate months
+  - 'm' to toggle between hours and euros
+  - 'q' to quit
+- **Custom theme**: Blue (#3399CC) color scheme
+- **Instant feedback**: Notifications appear immediately for pipeline operations
+
 ### Query the data
 
-After running the pipeline, you can query the data using DuckDB:
+You can also query the data directly using DuckDB:
 
 ```bash
-# Open a marimo notebook
-uv run marimo edit notebook.py
-
-# Or open the DuckDB CLI
+# Open the DuckDB CLI
 duckdb jortt.duckdb
 
 # Or use Python
 python
 >>> import duckdb
 >>> conn = duckdb.connect('jortt.duckdb')
->>> conn.execute("SELECT * FROM raw.projects LIMIT 5").fetchdf()
->>> conn.execute("SELECT * FROM raw.project_line_items LIMIT 5").fetchdf()
+>>> conn.execute("SELECT * FROM raw.timesheet LIMIT 5").fetchdf()
+>>> conn.execute("SELECT * FROM raw.timesheet_by_week LIMIT 5").fetchdf()
 ```
 
 ### just
@@ -109,16 +140,18 @@ Alternatively, install [just](https://just.systems/man/en/introduction.html) and
 ### Project structure
 
 ```
-jortt-duck/
-├── jortt_duck/
+jortt-report/
+├── jortt_report/
 │   ├── __init__.py
-│   ├── __main__.py       # Main entry point
+│   ├── __main__.py       # Main entry point - runs pipeline
 │   ├── auth.py           # OAuth authentication helper
-│   └── pipeline.py       # DLT pipeline with REST API config
+│   ├── pipeline.py       # DLT pipeline with REST API config
+│   ├── datamart.py       # Semantic layer & aggregation tables
+│   └── tui.py            # Textual terminal UI
+├── tests/                # Test suite
 ├── .env                  # Environment variables
 ├── .gitignore
 ├── justfile              # just command runner
-├── notebook.py           # example marimo notebook
 ├── pyproject.toml        # Project configuration
 └── README.md
 ```
@@ -129,7 +162,8 @@ jortt-duck/
 2. **Declarative Configuration**: The REST API source is configured using a simple dictionary structure with endpoints, authentication, and pagination settings
 3. **Data Extraction**: dlt's built-in REST API source handles all API calls and pagination automatically
 4. **Data Loading**: DLT loads the data into a local DuckDB file using the `replace` write disposition
-5. **Result**: Your Jortt data is now available in DuckDB for analysis
+5. **Semantic Layer**: Creates a unified timesheet view and pre-aggregated tables using boring-semantic-layer
+6. **Visualization**: Textual TUI provides a terminal-based interface to query and navigate the optimized aggregation tables
 
 ### Authentication Flow
 
@@ -143,19 +177,30 @@ The project supports two authentication methods:
 
 The pipeline creates the following tables in the local DuckDB file (in the `raw` schema):
 
+### Source Tables
 - **projects**: Main table containing project data from the Jortt API
 - **project_line_items**: Table containing project line item data
+- **customers**: Customer information
 - **_dlt_loads**: DLT metadata table tracking load operations
 - **_dlt_pipeline_state**: DLT state management table
 - **_dlt_version**: DLT version information
 
+### Views
+- **timesheet**: Unified view joining projects and line items with customer info
+
+### Aggregation Tables
+Pre-computed aggregations for fast reporting:
+- **timesheet_by_date**: Daily aggregations per project (hours, value, count)
+- **timesheet_by_week**: Weekly aggregations per project
+- **timesheet_by_month**: Monthly aggregations per project
+
 Additional nested tables may be created automatically by dlt for nested JSON structures (e.g., `projects__customer_record__cc_emails`).
 
-Tables are accessible as `raw.projects` and `raw.project_line_items` within the DuckDB database.
+All tables and views are accessible with the `raw.` prefix (e.g., `raw.timesheet`, `raw.timesheet_by_week`).
 
 ## Extending the Pipeline
 
-To add more resources from the Jortt API, simply add them to the `resources` list in the configuration in [pipeline.py](src/jortt_duck/pipeline.py):
+To add more resources from the Jortt API, simply add them to the `resources` list in the configuration in [pipeline.py](src/jortt_report/pipeline.py):
 
 ```python
 "resources": [
@@ -198,7 +243,8 @@ That's it! No custom Python code needed. The dlt REST API source handles everyth
 - [DLT documentation](https://dlthub.com/docs)
 - [DLT REST API source documentation](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic)
 - [DuckDB documentation](https://duckdb.org/docs/)
-- [marimo](https://docs.marimo.io)
+- [Textual](https://textual.textualize.io/)
+- [uv](https://docs.astral.sh/uv/)
 
 ## License
 

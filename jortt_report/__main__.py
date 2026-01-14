@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .pipeline import run_pipeline
 from .auth import fetch_token
+from .datamart import create_all_views
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,9 +31,11 @@ project_root = Path(__file__).parent.parent
 default_db_path = project_root / "jortt.duckdb"
 database_path = os.getenv("DATABASE_PATH", str(default_db_path))
 
-print("\nStarting Jortt to DuckDB pipeline...")
-print(f"Target database: {database_path}")
-print("Schema: raw\n")
+print(
+    "\nStarting Jortt to DuckDB pipeline...\n"
+    f"Target database: {database_path}\n"
+    "Schema: raw\n"
+)
 
 # Run the pipeline
 run_pipeline(
@@ -40,4 +43,8 @@ run_pipeline(
     database_path=database_path,
 )
 
-print("\nPipeline execution completed!")
+# Create datamart views
+print("\nCreating datamart views...")
+create_all_views(database_path)
+
+print("\n Pipeline execution completed!")
