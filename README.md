@@ -1,6 +1,6 @@
-# Jortt to DuckDB Data Pipeline
+# Terminal-based timesheet reporting for Jortt with DuckDB backend
 
-A Python project that ingests data from the [Jortt API](https://developer.jortt.nl/) into a local DuckDB database using [dlt (data load tool)](https://dlthub.com/) with declarative REST API configuration.
+A Python project that ingests data from the [Jortt API](https://developer.jortt.nl/) into a local DuckDB database using [dlt (data load tool)](https://dlthub.com/) with declarative REST API configuration and a Textual UI.
 
 ## Features
 
@@ -11,12 +11,8 @@ A Python project that ingests data from the [Jortt API](https://developer.jortt.
 - **Automatic Pagination**: Built-in pagination handling by dlt
 - **Semantic Layer**: Built-in semantic model with pre-aggregated tables for reporting
 - **Textual TUI**: Rich terminal-based user interface with:
-  - Async pipeline execution (non-blocking)
   - Keyboard navigation for weeks and months
   - Toggle between hours and euros metrics
-  - Custom blue color theme
-  - Instant notifications
-- **Type-Safe**: Built with modern Python practices
 
 ## Prerequisites
 

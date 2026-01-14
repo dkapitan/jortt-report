@@ -2,11 +2,11 @@ default: load report
 
 # ingest data from jortt API (full load)
 load:
-    uv run python -m jortt_duck
+    uv run python -m jortt_report
 
-# analyze data in marimo notebook
+# launch terminal UI
 report:
-    uv run marimo edit ./jortt_duck/app.py
+    uv run jortt-report
 
 # analyze using DuckDB CLI
 duck:

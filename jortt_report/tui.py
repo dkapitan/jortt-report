@@ -258,7 +258,7 @@ class TimesheetApp(App):
                 "run",
                 "python",
                 "-m",
-                "jortt_duck",
+                "jortt_report",
                 cwd=self.project_root,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
