@@ -153,11 +153,57 @@ class TimesheetApp(App):
 
     def on_mount(self) -> None:
         """Set up the app after mounting."""
-        # Load initial data
-        self.notify("Loading reports...", timeout=2)
-        self.refresh_weekly_report()
-        self.refresh_monthly_report()
-        self.notify("Reports loaded", timeout=2)
+        # Run pipeline at startup to ensure fresh data
+        self.notify("⏳ Starting pipeline...", severity="information", timeout=3)
+        self.run_worker(self._startup_pipeline_worker, exclusive=True)
+
+    async def _startup_pipeline_worker(self) -> None:
+        """Worker method to run the pipeline at startup and then load reports."""
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "uv",
+                "run",
+                "python",
+                "-m",
+                "jortt_report",
+                cwd=self.project_root,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=300  # 5 minute timeout
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                self.notify(
+                    "✗ Pipeline timed out after 5 minutes", severity="error", timeout=5
+                )
+                return
+
+            if process.returncode == 0:
+                self.notify("✓ Pipeline completed successfully", timeout=3)
+                # Load reports with fresh data
+                self.refresh_weekly_report()
+                self.refresh_monthly_report()
+                self.notify("Reports loaded", timeout=2)
+            else:
+                error_msg = stderr.decode()[:200] if stderr else "Unknown error"
+                self.notify(
+                    f"✗ Pipeline failed: {error_msg}", severity="error", timeout=10
+                )
+                # Still try to load any existing data
+                self.refresh_weekly_report()
+                self.refresh_monthly_report()
+        except Exception as e:
+            self.notify(
+                f"✗ Error running pipeline: {str(e)[:100]}", severity="error", timeout=5
+            )
+            # Still try to load any existing data
+            self.refresh_weekly_report()
+            self.refresh_monthly_report()
 
     def action_run_pipeline(self) -> None:
         """Action to run the pipeline via key binding."""
@@ -320,7 +366,8 @@ class TimesheetApp(App):
     def get_target_week(self) -> tuple[int, int]:
         """Get the target week number and year based on offset."""
         target_date = date.today() + timedelta(weeks=self.week_offset)
-        return target_date.isocalendar().week, target_date.year
+        iso_calendar = target_date.isocalendar()
+        return iso_calendar.week, iso_calendar.year
 
     def get_target_month(self) -> tuple[int, int]:
         """Get the target month and year based on offset."""

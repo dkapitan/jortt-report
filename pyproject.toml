@@ -1,6 +1,6 @@
 [project]
 name = "jortt-report"
-version = "0.1.2"
+version = "0.1.3"
 description = "Terminal-based timesheet reporting for Jortt with DuckDB backend"
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
