@@ -82,6 +82,12 @@ def get_jortt_config(access_token: str) -> dict:
                         },
                     },
                     "data_selector": "data",
+                    "response_actions": [
+                        {
+                            "status_code": 404,
+                            "action": "ignore",
+                        }
+                    ],
                 },
                 "columns": {
                     "date": {"data_type": "date"},
